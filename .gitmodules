@@ -1,0 +1,6 @@
+[submodule ".submodules/ansi"]
+	path = .submodules/ansi
+	url = git@github.com:binRick/ansi.git
+[submodule ".submodules/bash-concurrent"]
+	path = .submodules/bash-concurrent
+	url = git@github.com:binRick/bash-concurrent.git
