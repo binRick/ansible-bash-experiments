@@ -4,3 +4,6 @@
 [submodule ".submodules/bash-concurrent"]
 	path = .submodules/bash-concurrent
 	url = git@github.com:binRick/bash-concurrent.git
+[submodule ".submodules/optparrse"]
+	path = .submodules/optparrse
+	url = git@github.com:binRick/optparse.git

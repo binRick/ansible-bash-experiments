@@ -1,2 +1,7 @@
 
 LIST_HOSTS_EXAMPLE_OUTPUT.txt
+out
+*.swp
+.v
+.venv/
+check_updates_output_example.txt

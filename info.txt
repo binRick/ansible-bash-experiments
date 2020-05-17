@@ -1,0 +1,1 @@
+eval $(source setup.sh)
