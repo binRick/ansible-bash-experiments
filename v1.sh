@@ -298,13 +298,13 @@ check_updates_hosts(){
     host_list="$1"
     host_list="$(echo -e "$host_list"|tr '\n' ' ' |tr ' ' ','|sed 's/^,//g'|sed 's/,$//g')"
     forks="5"
-
-    module_args="-a \"bin/check_updates\""
+    md="$(mktemp -d)"
+    module_args="-a \"bin/check_updates\" --tree $md"
     module="script"
 
     cmd="~/.local/bin/ansible $host_list -u $ssh_user -f $forks -i $host_list, -m $module $module_args -bkK -c ssh"
     setup_env=$(get_env)
-    cmd="sh -c '$setup_env && $cmd 2>/dev/null'"
+    cmd="sh -c '$setup_env && $cmd 2>/dev/null; [[ -d \"$md\" ]] && (tar -cf - $md|base64 -w0)'"
 
 
     bastion_cmd="command ssh $ssh_args \"$ssh_bastion_host\" ${cmd}"
@@ -312,18 +312,17 @@ check_updates_hosts(){
     ansi --yellow --bg-black "$bastion_cmd"
 
     set +e
-    _err=$(mktemp)
-    out="$(wrap_passh "$bastion_cmd" 2>$_err)"
+    out="$(wrap_passh "$bastion_cmd" 2>&1)"
     exit_code="$(echo -e "$out"|grep '^exit_code='|cut -d'=' -f2|head -n1)"
-    out="$(echo -e "$out"|grep '^exit_code=' -v|grep -v '^export ')"    
-    err="$(cat $_err)"
+    tree_base64="$(echo -e "$out"|grep '^tar: ' -A1|tail -n1)"
+    out="$(echo -e "$out"|grep '^exit_code=' -v|grep -v '^export '|grep -v '^tar: ' -B9999)"
     set -e
 
     ansi --yellow "$cmd"
-    ansi --red "$err"
     ansi --green "$out"
     ansi --cyan "$exit_code"
-    
+    ansi --white --underline "$tree_base64"
+ 
     echo Check update
 
 }
