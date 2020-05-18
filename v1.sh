@@ -304,7 +304,7 @@ check_updates_hosts(){
 
     cmd="~/.local/bin/ansible $host_list -u $ssh_user -f $forks -i $host_list, -m $module $module_args -bkK -c ssh"
     setup_env=$(get_env)
-    cmd="sh -c '$setup_env && $cmd 2>/dev/null; [[ -d \"$md\" ]] && (tar -cf - $md|base64 -w0)'"
+    cmd="sh -c '$setup_env && $cmd 2>/dev/null; [[ -d \"$md\" ]] && (tar -cf - $md 2>/dev/null|base64 -w0)'" 
 
 
     bastion_cmd="command ssh $ssh_args \"$ssh_bastion_host\" ${cmd}"
@@ -314,9 +314,17 @@ check_updates_hosts(){
     set +e
     out="$(wrap_passh "$bastion_cmd" 2>&1)"
     exit_code="$(echo -e "$out"|grep '^exit_code='|cut -d'=' -f2|head -n1)"
-    tree_base64="$(echo -e "$out"|grep '^tar: ' -A1|tail -n1)"
-    out="$(echo -e "$out"|grep '^exit_code=' -v|grep -v '^export '|grep -v '^tar: ' -B9999)"
+    tree_base64="$(echo -e "$out"|tail -n1)"
+    out="$(echo -e "$out"|grep '^exit_code=' -v|grep -v '^export '|grep -v "$tree_base64")"
     set -e
+
+    mkdir -p $md
+    (cd $md && echo -e "$tree_base64" | base64 -d | tar xvf -)
+
+    echo $md
+    find $md -type f
+    exit
+
 
     ansi --yellow "$cmd"
     ansi --green "$out"
