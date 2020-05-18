@@ -29,13 +29,13 @@ bin_prefix="$ssh_user_homedir/bin"
 dns1_server="${dns1_server:-45.56.64.246}"
 dns2_server="${dns2_server:-45.56.64.246}"
 ssh_args="-q -tt -oLogLevel=ERROR -oStrictHostKeyChecking=no -oUserKnownHostsFile=/dev/null -oUser=${ssh_user}"
-passh="command passh -P 'password:' -p 'env:__P' -c1"
+passh="command passh -P 'password' -p 'env:__P' -c2"
 [[ ! -f ~/.ssh/id_rsa ]] && ssh-keygen -t rsa -N '' -f ~/.ssh/id_rsa -q
 debug_mode="${debug_mode:-0}"
 
 
 get_env(){
-    setup_env="export PATH=\"~/.local/bin:\$PATH\" __P=\"$__P\" ANSIBLE_SSH_ARGS=\"-oStrictHostKeyChecking=no\""
+    setup_env="export PROMPT_COMMAND= PS1= PATH=\"~/.local/bin:\$PATH\" __P=\"$__P\" ANSIBLE_SSH_ARGS=\"-oStrictHostKeyChecking=no\""
     echo -e "$setup_env"
 }
 
@@ -82,10 +82,12 @@ hardened_list(){
 wrap_passh(){
     set +e
     cmd="$(_wrap_passh "$@")"
-    out="$(eval $cmd 2>&1)"
+    err=$(mktemp)
+    out="$(eval $cmd 2>$err| egrep -v '^SSH password:|^BECOME password')"
     ec=$?
     set -e
     echo -e "exit_code=$ec\n$out"
+    >&2 cat $err
 }
 
 _wrap_passh(){
@@ -292,6 +294,39 @@ extract_ansible_command_outputs_and_exit_codes(){
     echo -e "$_results"
 }
 
+check_updates_hosts(){
+    host_list="$1"
+    host_list="$(echo -e "$host_list"|tr '\n' ' ' |tr ' ' ','|sed 's/^,//g'|sed 's/,$//g')"
+    forks="5"
+
+    module_args="-a \"bin/check_updates\""
+    module="script"
+
+    cmd="~/.local/bin/ansible $host_list -u $ssh_user -f $forks -i $host_list, -m $module $module_args -bkK -c ssh"
+    setup_env=$(get_env)
+    cmd="sh -c '$setup_env && $cmd 2>/dev/null'"
+
+
+    bastion_cmd="command ssh $ssh_args \"$ssh_bastion_host\" ${cmd}"
+    #ansi --yellow "$cmd"
+    ansi --yellow --bg-black "$bastion_cmd"
+
+    set +e
+    _err=$(mktemp)
+    out="$(wrap_passh "$bastion_cmd" 2>$_err)"
+    exit_code="$(echo -e "$out"|grep '^exit_code='|cut -d'=' -f2|head -n1)"
+    out="$(echo -e "$out"|grep '^exit_code=' -v|grep -v '^export ')"    
+    err="$(cat $_err)"
+    set -e
+
+    ansi --yellow "$cmd"
+    ansi --red "$err"
+    ansi --green "$out"
+    ansi --cyan "$exit_code"
+    
+    echo Check update
+
+}
 reboot_hosts(){
     host_list="$1"
     host_list="$(echo -e "$host_list"|tr '\n' ' ' |tr ' ' ','|sed 's/^,//g'|sed 's/,$//g')"
@@ -308,20 +343,23 @@ reboot_hosts(){
 
     cmd="~/.local/bin/ansible $host_list -u $ssh_user -f $forks -i $host_list, -m $module $module_args -bk -c ssh"
     setup_env=$(get_env)
-    cmd="sh -c '$setup_env && $cmd'"
+    cmd="sh -c '$setup_env && $cmd 2>/dev/null'"
 
 
     bastion_cmd="command ssh $ssh_args \"$ssh_bastion_host\" ${cmd}"
-    ansi --yellow "$cmd"
-    ansi --yellow --bg-black "$bastion_cmd"
+    #ansi --yellow "$cmd"
+    #ansi --yellow --bg-black "$bastion_cmd"
 
     set +e
-    out="$(wrap_passh "$bastion_cmd")"
+    _err=$(mktemp)
+    out="$(wrap_passh "$bastion_cmd" 2>$_err)"
     exit_code="$(echo -e "$out"|grep '^exit_code='|cut -d'=' -f2|head -n1)"
-    out="$(echo -e "$out"|grep '^exit_code=' -v)"
+    out="$(echo -e "$out"|grep '^exit_code=' -v|grep -v '^export ')"    
+    err="$(cat $_err)"
     set -e
 
     ansi --yellow "$cmd"
+    ansi --red "$err"
     ansi --green "$out"
     ansi --cyan "$exit_code"
     
@@ -675,6 +713,9 @@ main(){
     if [[ "$_REBOOT_UNEXPECTED_KERNEL_HOSTS" == "1" ]]; then
         reboot_hosts "$unexpected_kernel_hosts"
     fi
+
+
+    check_updates_hosts "$ok_sudo_auth_hosts"
 
 
     echo OK

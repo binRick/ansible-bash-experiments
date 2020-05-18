@@ -12,4 +12,5 @@ pip install pip --upgrade
 pip install 'j2cli[yaml]'
 
 command -v j2 
-  
+ 
+echo sudo dnf -y install perl-Readonly perl-Monitoring-Plugin 
