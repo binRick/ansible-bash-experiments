@@ -1,8 +1,9 @@
-#!/usr/bin/env bash
+#!/bin/bash
 set -e
 cd $( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
 export PATH=$(pwd)/bin:$PATH
-for f in .submodules/ansi/ansi.sh .submodules/bash-concurrent/concurrent.lib.sh .submodules/optparrse/optparse.bash v1-defaults.sh v1-args.sh; do source $f; done
+for f in .submodules/bash-concurrent/concurrent.lib.sh .submodules/ansi/ansi.sh .submodules/optparrse/optparse.bash v1-defaults.sh v1-args.sh; do source $f; done
+
 
 
 validate_inputs(){
@@ -33,6 +34,10 @@ passh="command passh -P 'password:' -p 'env:__P' -c1"
 debug_mode="${debug_mode:-0}"
 
 
+get_env(){
+    setup_env="export PATH=\"~/.local/bin:\$PATH\" __P=\"$__P\" ANSIBLE_SSH_ARGS=\"-oStrictHostKeyChecking=no\""
+    echo -e "$setup_env"
+}
 
 reset_all_ansi(){
     ansi::resetAttributes
@@ -216,7 +221,7 @@ _find_hosts_auth_ok(){
     cmd_sudo="$cmd_a_sudo"
     cmd="$(_wrap_passh "$cmd")"
     cmd_sudo="$passh $cmd_sudo"
-    setup_env="export PATH=\"~/.local/bin:\$PATH\" __P=\"$__P\" ANSIBLE_SSH_ARGS=\"-oStrictHostKeyChecking=no\""
+    setup_env=$(get_env)
     cmd="sh -c '$setup_env && $cmd'"
     cmd_sudo="sh -c '$setup_env && $cmd_sudo'"
     bastion_cmd="$passh command ssh $ssh_args \"$ssh_bastion_host\" \"$cmd\""
@@ -287,32 +292,42 @@ extract_ansible_command_outputs_and_exit_codes(){
     echo -e "$_results"
 }
 
-find_hosts_needing_reboot(){
-    set +e
+reboot_hosts(){
     host_list="$1"
-    host_list="$(echo -e "$host_list"|tr ' ' ',')"
-    failed_hosts_file=$(mktemp)
-    remote_cmd="uname -a"
+    host_list="$(echo -e "$host_list"|tr '\n' ' ' |tr ' ' ','|sed 's/^,//g'|sed 's/,$//g')"
     forks="5"
-    cmd="ansible $host_list -u $ssh_user -f $forks -i $host_list -k -m command -a '$remote_cmd'"
-    out="$(wrap_passh "$cmd")"
+
+    # live mode
+    #module="reboot"
+    #module_args=""
+
+    # dev mode
+    module_args="-a 'id'"
+    module="command"
+
+
+    cmd="~/.local/bin/ansible $host_list -u $ssh_user -f $forks -i $host_list, -m $module $module_args -bk -c ssh"
+    setup_env=$(get_env)
+    cmd="sh -c '$setup_env && $cmd'"
+
+
+    bastion_cmd="command ssh $ssh_args \"$ssh_bastion_host\" ${cmd}"
+    ansi --yellow "$cmd"
+    ansi --yellow --bg-black "$bastion_cmd"
+
+    set +e
+    out="$(wrap_passh "$bastion_cmd")"
     exit_code="$(echo -e "$out"|grep '^exit_code='|cut -d'=' -f2|head -n1)"
     out="$(echo -e "$out"|grep '^exit_code=' -v)"
-    #parsed="$(extract_ansible_command_outputs_and_exit_codes "$out")"
+    set -e
 
-    
-    #cmd="$passh $cmd"
-    #bastion_cmd="$passh command ssh $ssh_args \"$ssh_bastion_host\" ${cmd}"
-    ansi --yellow --bgBlack --underline "$parsed"
     ansi --yellow "$cmd"
     ansi --green "$out"
     ansi --cyan "$exit_code"
-    #ansi --cyan "$bastion_cmd"
-
-    #eval $cmd
     
-    echo AOK
-    exit 0
+    echo REBOOT OK
+}
+xxxxxxxxxxx(){
     for h in $host_list; do
         echo -e "h=$h"
         cmd="sudo -u root $bin_prefix/check_updates"
@@ -355,12 +370,41 @@ collect_facts_return_dir(){
     echo -e "$facts_dir"
 }
 
+find_hosts_with_unexpected_kernel_version(){
+    _l=""
+    while read -r host kernel_version; do
+        [[ "$kernel_version" != "$expected_kernel_version" ]] && _l="$_l $host"
+    done < <(find_host_kernels "$1" "$2"|grep ':' | tr ':' ' ')
+    echo -e "$_l"
+}
+
+find_host_kernels(){
+    set +e
+    host_list="$1"
+    report_dir="$2"
+    [[ ! -d "$reports_dir" ]] && reports_dir="$(collect_facts_return_dir "$host_list")"
+    [[ ! -d "$reports_dir" ]] && echo -e "invalid reports dir" && return 1
+    host_list="$(echo -e "$host_list"||tr ',' ' ')"
+    for h in $(echo -e "$host_list"|tr ',' ' ' | tr ' ' '\n'); do
+        f="$report_dir/$h"
+        [[ ! -f "$f" || ! -d "$report_dir" ]] && >&2 echo -e "missing $h in $report_dir!" && continue
+        kernel="$(cat $f | jq '.ansible_facts.ansible_kernel' -Mrc)"
+        echo -e "$h:$kernel"
+    done
+    set -e
+}
+
 cmdb_report(){
     host_list="$1"
     _t="$2"
-    _c="name,os,ip,mem,cpus"
-    _d="$(collect_facts_return_dir "$host_list")"
-    cmd="python3 ~/.local/lib/ansiblecmdb/ansible-cmdb.py  -t $_t --columns $_c  $_d/  2>/dev/null|grep -v '^$'"
+    if [[ "$3" == "" ]]; then
+        _d="$(collect_facts_return_dir "$host_list")"
+    else
+        _d="$3"
+    fi
+
+    _c="--columns name,os,ip,mem,cpus,kernel"
+    cmd="python3 ~/.local/lib/ansiblecmdb/ansible-cmdb.py  -t $_t $_c  $_d/  2>/dev/null|grep -v '^$'"
     set +e
     out="$(eval $cmd)"
     ec=$?
@@ -560,42 +604,80 @@ available_unique_hosts_summary(){
     set -e
 }
 
+
 validate_inputs
-validate_bastion || { echo -e "validate_bastion failed!" && exit 55; }
-
-rsync_local_bin_to_bastion >/dev/null
-msg="$(ansi --cyan --bold "bastion bin:") $(ansi --green "$(list_bastion_bin)")"
-echo -ne "$msg\n\n"
 
 
-list_bastion_local_bin | grep ansible-playbook -q || wrap_passh "pip3 install ansible==2.8.11 --user"
-msg="$(ansi --cyan --bold "bastion local bin:") $(ansi --green "$(list_bastion_local_bin)")"
-echo -ne "$msg\n\n"
+if [[ "$skip_bastion_server_validation" != "1" ]]; then
+    validate_bastion || { echo -e "validate_bastion failed!" && exit 55; }
+    rsync_local_bin_to_bastion >/dev/null 
+    msg="$(ansi --cyan --bold "bastion bin:") $(ansi --green "$(list_bastion_bin)")" 
+    echo -ne "$msg\n\n" 
+
+    list_bastion_local_bin | grep ansible-playbook -q || wrap_passh "pip3 install ansible==2.8.11 --user"
+    msg="$(ansi --cyan --bold "bastion local bin:") $(ansi --green "$(list_bastion_local_bin)")" 
+    echo -ne "$msg\n\n"
+fi
+
+main(){
+    if [[ "$_UNIQUE_HOSTS" == "" ]]; then
+        echo -e "discovering hosts"
+        discover_unique_hosts
+        echo -e "unique_hosts=\"$unique_hosts\"\n\n"
+    else
+        echo -e "cached hosts!"
+        unique_hosts="$(echo -e "$_UNIQUE_HOSTS"|tr ' ' ',')"
+    fi
 
 
-discover_unique_hosts
-echo -e "unique_hosts=\"$unique_hosts\"\n\n"
+    if [[ "$_SKIP_AUTH_HOSTS" == "1" ]]; then
+        src="unique"
+        ok_auth_hosts="$(echo -e "$unique_hosts" |hardened_list)"
+    else
+        src="lookup"
+        ok_auth_hosts="$(find_hosts_auth_ok "$unique_hosts" ""|hardened_list)"
+    fi
+    msg=" [src=$src]   :: ok_auth_hosts=\"$ok_auth_hosts\"\n\n"
+    msg="$(ansi --yellow "$msg")"
+    echo -e "$msg"
+
+    if [[ "$_SKIP_SUDO_AUTH_HOSTS" == "1" ]]; then
+        src="ok_auth_hosts"
+        ok_sudo_auth_hosts="$(echo -e "$ok_auth_hosts" |hardened_list)"
+    else
+        src="lookup"
+        ok_sudo_auth_hosts="$(find_hosts_auth_ok "$ok_auth_hosts" "with_sudo"|hardened_list)"
+    fi
+    msg=" [src=$src]   :: ok_sudo_auth_hosts=\"$ok_sudo_auth_hosts\"\n\n"
+    msg="$(ansi --yellow "$msg")"
+    echo -e "$msg"
+
+    if [[ ! -d "$report_dir" ]]; then
+        ansi --yellow "Collecting Facts..."
+        report_dir="$(collect_facts_return_dir "$ok_auth_hosts")"
+        ansi --yellow "Collected in $report_dir"
+    fi
+
+    if [[ "$_GENERATE_REPORT" == "1" ]]; then
+        ansi --yellow "Generating Report"
+        cmdb_report "$ok_auth_hosts" txt_table2.tpl "$report_dir"
+    fi
 
 
+    if [[ "$_COLLECT_UNEXPECTED_KERNEL_HOSTS" == "1" || "$_REBOOT_UNEXPECTED_KERNEL_HOSTS" == "1" ]]; then
+        ansi --yellow "Collecting Unpexpected Kernel Hosts..."
+        unexpected_kernel_hosts="$(find_hosts_with_unexpected_kernel_version "$ok_auth_hosts" "$report_dir")"
 
-#available_unique_hosts_summary
+        ansi --yellow "expected_kernel_version=$expected_kernel_version"
+        ansi --yellow "unexpected_kernel_hosts=$unexpected_kernel_hosts"
+    fi
 
-ok_auth_hosts="$(find_hosts_auth_ok "$unique_hosts" ""|hardened_list)"
-echo -e "ok_auth_hosts=\"$ok_auth_hosts\"\n\n"
-
-ok_sudo_auth_hosts="$(find_hosts_auth_ok "$unique_hosts" "with_sudo"|hardened_list)"
-echo -e "ok_sudo_auth_hosts=\"$ok_sudo_auth_hosts\"\n\n"
-
-#find_hosts_needing_reboot "$ok_sudo_auth_hosts"
-
-ansi --yellow "Generating Report..."
-cmdb_report "$ok_auth_hosts" txt_table2.tpl
-
-echo OK
-exit 0
+    if [[ "$_REBOOT_UNEXPECTED_KERNEL_HOSTS" == "1" ]]; then
+        reboot_hosts "$unexpected_kernel_hosts"
+    fi
 
 
-#find_hosts_auth_ok "$ok_ping_hosts" "with_sudo"
-#find_hosts_auth_ok "$unique_hosts"
-#process_play_hosts "$unique_hosts"
+    echo OK
+}
 
+main

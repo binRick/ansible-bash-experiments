@@ -8,6 +8,7 @@ col_space = 2
 
 cols = [
   {"title": "Name",       "id": "name",       "visible": True, "field": lambda h: h.get('name', '')},
+  {"title": "Kernel",       "id": "kernel",       "visible": True, "field": lambda h: h['ansible_facts'].get('ansible_kernel', 'unknown kernel')},
   {"title": "OS",         "id": "os",         "visible": True, "field": lambda h: h['ansible_facts'].get('ansible_distribution', '') + ' ' + h['ansible_facts'].get('ansible_distribution_version', '')},
   {"title": "IP",         "id": "ip",         "visible": True, "field": lambda h: host['ansible_facts'].get('ansible_default_ipv4', {}).get('address', '')},
   {"title": "Mac",        "id": "mac",        "visible": True, "field": lambda h: host['ansible_facts'].get('ansible_default_ipv4', {}).get('macaddress', '')},
