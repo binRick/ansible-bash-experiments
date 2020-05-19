@@ -1,36 +1,49 @@
-
 <document>
-
-
    <page>
-
-      <item col="0" row="0" colSpan="6" rowSpan="3">
+      <item col="0" row="0" colSpan="7" rowSpan="7">
   
         <markdown style-paragraph="chalk.white" style-strong="chalk.cyan.underline" style-em="chalk.green" border-type="line" border-fg="gray">
           <markdown>
-              *wopr* is a markup format for rich terminal `reports`, `presentations` and `infographics`. &#10;Build the report from any language and view it locally or remotely via curl. &#10;&#10;More information: &#10;&#10;&#10;&#10;[https://github.com/yaronn/wopr](https://github.com/yaronn/wopr) &#10;&#10;[https://twitter.com/YaronNaveh](https://twitter.com/YaronNaveh)
+     *play execution summary*
+     # ansible         # ssh
+      (oldest=xxx)        (oldest=xxxxx)
+      (newewst=xxx)       (newest=xxxxx)
+       - 999             - 132
+       - 999             - 132
+       - 999             - 132
+
+     # stats             # ssh control master
+      (oldest=xxx)        (oldest=xxxxx)
+      (newewst=xxx)       (newest=xxxxx)
+       - forks: 15       - 132
+       - io read: 15     - 132
+       - io written: 15  - 132
+
+          </markdown>
+        </markdown>
+          
+      </item>
+   </page>
+   <page>
+      <item col="0" row="0" colSpan="7" rowSpan="3">
+  
+        <markdown style-paragraph="chalk.white" style-strong="chalk.cyan.underline" style-em="chalk.green" border-type="line" border-fg="gray">
+          <markdown>
+              *play execution summary*
           </markdown>
         </markdown>
           
       </item>
       
       
-      <item col="0" row="3" colSpan="6" rowSpan="4">
+      <item col="0" row="3" colSpan="7" rowSpan="4">
   
-        <bar barWidth="5" barSpacing="5" xOffset="10" maxHeight="5" height="100%"  border-type="line" border-fg="gray" data-titles="FAILED,OK,AUTH,SUDO,xx" data-data="2,4,2,5,3" />
+        <bar barWidth="7" barSpacing="15" xOffset="2" maxHeight="5" height="100%"  border-type="line" border-fg="gray" data-titles="UNREACHABLE,PENDING,PROCESSING,FAILED,OK" data-data="2,4,2,5,3" />
         
       </item>
 
 
-      <item col="6" row="3" colSpan="6" rowSpan="4">
-        <bar barWidth="5" barSpacing="5" xOffset="10" maxHeight="5" height="100%"  border-type="line" border-fg="gray" data-titles="FAILED,OK,AUTH,SUDO,xx" data-data="2,4,2,5,3" />
-  
-        
-      </item>
-      
-      
-      <item col="0" row="7" colSpan="6" rowSpan="4">
-
+      <item col="0" row="7" colSpan="7" rowSpan="4">
         <donut radius="12" spacing="1"  border-type="line" border-fg="gray">
           <data>
             <m color="yellow" percent="80" label="Processing" />
@@ -41,20 +54,9 @@
         
       </item>
       
-      <item col="6" row="7" colSpan="6" rowSpan="4">
-  
-        <donut radius="12" spacing="1"  border-type="line" border-fg="gray">
-          <data>
-            <m color="yellow" percent="80" label="Processing" />
-            <m color="red" percent="60" label="Failed" />
-            <m color="green" percent="35" label="Complete" />
-          </data>
-        </donut>
-        
-      </item>
       
 
-      <item col="6" row="0" colSpan="6" rowSpan="3">
+      <item col="7" row="0" colSpan="5" rowSpan="11">
   
          <table fg="white" width="80%" height="80%"  border-type="line" border-fg="gray" columnSpacing="5" columnWidth="1,10,5,5,10" data-headers=",Group,time,pct,status" interactive="false">
           <data-data>
