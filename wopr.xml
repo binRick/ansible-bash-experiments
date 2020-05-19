@@ -1,0 +1,76 @@
+
+<document>
+
+
+   <page>
+
+      <item col="0" row="0" colSpan="6" rowSpan="3">
+  
+        <markdown style-paragraph="chalk.white" style-strong="chalk.cyan.underline" style-em="chalk.green" border-type="line" border-fg="gray">
+          <markdown>
+              *wopr* is a markup format for rich terminal `reports`, `presentations` and `infographics`. &#10;Build the report from any language and view it locally or remotely via curl. &#10;&#10;More information: &#10;&#10;&#10;&#10;[https://github.com/yaronn/wopr](https://github.com/yaronn/wopr) &#10;&#10;[https://twitter.com/YaronNaveh](https://twitter.com/YaronNaveh)
+          </markdown>
+        </markdown>
+          
+      </item>
+      
+      
+      <item col="0" row="3" colSpan="6" rowSpan="4">
+  
+        <bar barWidth="5" barSpacing="5" xOffset="10" maxHeight="5" height="100%"  border-type="line" border-fg="gray" data-titles="FAILED,OK,AUTH,SUDO,xx" data-data="2,4,2,5,3" />
+        
+      </item>
+
+
+      <item col="6" row="3" colSpan="6" rowSpan="4">
+        <bar barWidth="5" barSpacing="5" xOffset="10" maxHeight="5" height="100%"  border-type="line" border-fg="gray" data-titles="FAILED,OK,AUTH,SUDO,xx" data-data="2,4,2,5,3" />
+  
+        
+      </item>
+      
+      
+      <item col="0" row="7" colSpan="6" rowSpan="4">
+
+        <donut radius="12" spacing="1"  border-type="line" border-fg="gray">
+          <data>
+            <m color="yellow" percent="80" label="Processing" />
+            <m color="red" percent="60" label="Failed" />
+            <m color="green" percent="35" label="Complete" />
+          </data>
+        </donut>
+        
+      </item>
+      
+      <item col="6" row="7" colSpan="6" rowSpan="4">
+  
+        <donut radius="12" spacing="1"  border-type="line" border-fg="gray">
+          <data>
+            <m color="yellow" percent="80" label="Processing" />
+            <m color="red" percent="60" label="Failed" />
+            <m color="green" percent="35" label="Complete" />
+          </data>
+        </donut>
+        
+      </item>
+      
+
+      <item col="6" row="0" colSpan="6" rowSpan="3">
+  
+         <table fg="white" width="80%" height="80%"  border-type="line" border-fg="gray" columnSpacing="5" columnWidth="1,10,5,5,10" data-headers=",Group,time,pct,status" interactive="false">
+          <data-data>
+            ,{blue-fg}xxxxxxx{/blue-fg},x,y,{red-fg}fail{/red-fg}
+          </data-data>
+         </table>
+         
+         
+        
+      </item>
+      
+    </page>
+
+
+
+    
+    
+</document>
+
