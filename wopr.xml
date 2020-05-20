@@ -1,30 +1,5 @@
 <document>
    <page>
-      <item col="0" row="0" colSpan="7" rowSpan="7">
-  
-        <markdown style-paragraph="chalk.white" style-strong="chalk.cyan.underline" style-em="chalk.green" border-type="line" border-fg="gray">
-          <markdown>
-     *play execution summary*
-     # ansible         # ssh
-      (oldest=xxx)        (oldest=xxxxx)
-      (newewst=xxx)       (newest=xxxxx)
-       - 999             - 132
-       - 999             - 132
-       - 999             - 132
-
-     # stats             # ssh control master
-      (oldest=xxx)        (oldest=xxxxx)
-      (newewst=xxx)       (newest=xxxxx)
-       - forks: 15       - 132
-       - io read: 15     - 132
-       - io written: 15  - 132
-
-          </markdown>
-        </markdown>
-          
-      </item>
-   </page>
-   <page>
       <item col="0" row="0" colSpan="7" rowSpan="3">
   
         <markdown style-paragraph="chalk.white" style-strong="chalk.cyan.underline" style-em="chalk.green" border-type="line" border-fg="gray">
@@ -72,6 +47,31 @@
 
 
 
+   <page>
+      <item col="0" row="0" colSpan="7" rowSpan="7">
+  
+        <markdown style-paragraph="chalk.white" style-strong="chalk.cyan.underline" style-em="chalk.green" border-type="line" border-fg="gray">
+          <markdown>
+     *play execution summary*
+     # ansible         # ssh
+      (oldest=xxx)        (oldest=xxxxx)
+      (newewst=xxx)       (newest=xxxxx)
+       - 999             - 132
+       - 999             - 132
+       - 999             - 132
+
+     # stats             # ssh control master
+      (oldest=xxx)        (oldest=xxxxx)
+      (newewst=xxx)       (newest=xxxxx)
+       - forks: 15       - 132
+       - io read: 15     - 132
+       - io written: 15  - 132
+
+          </markdown>
+        </markdown>
+          
+      </item>
+   </page>
     
     
 </document>
