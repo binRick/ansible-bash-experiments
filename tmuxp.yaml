@@ -1,0 +1,59 @@
+session_name: xxxxxxxxxxxxxxxx
+start_directory: xxxxxxxxxxxxxxxx
+environment:
+  TMUXP_SESSION: '1'
+  start_directory: xxxxxxxxxxx
+  source_script: server-utils.sh
+suppress_history: yes
+global_options:
+  default-shell: /bin/bash
+  default-command: /bin/bash
+windows:
+
+- window_name: Patching Acitvity
+  window_index: 0
+  focus: true
+  layout: 19f1,157x63,0,0[157x20,0,0,320,157x2,0,21,321,157x39,0,24,322]
+  options:
+    automatic-rename: yes
+  options_after:
+    synchronize-panes: off
+  shell_command_before:
+    - cd xxxxxxxxx
+    - clear
+    - source xxxxxxxxxx
+    - title_term xxxxxxxx xxxxxxxxxxxxxxxx
+
+  panes:
+
+  - shell_command: 'while [ 1 ]; do eval $SQL_PLAYS; sleep 10; done'
+    shell_command_before: title_term '' xxxxxxxxxx
+
+  - shell_command: 'while [ 1 ]; do subtree_pids $(cat $BP_PID_FILE)| tr "\n" " "; echo; sleep 5; done'
+    shell_command_before: title_term '' xxxxxxxxxx
+
+  - focus: true
+    shell_command_before: title_term '' xxxxxxxxxx
+    shell_command: echo main
+
+- window_name: Host Monitoring
+  window_index: 1
+  focus: false
+  layout: 19f1,157x63,0,0[157x20,0,0,320,157x2,0,21,321,157x39,0,24,322]
+  options:
+    automatic-rename: yes
+  options_after:
+    synchronize-panes: off
+  shell_command_before:
+    - cd xxxxxxxxx
+    - clear
+    - source xxxxxxxxxx
+    - title_term xxxxxxxx xxxxxxxxxxxxxxxx
+  panes:
+
+  - shell_command_before: title_term '' xxxxxxxxxx
+    shell_command: echo monitor host
+  - focus: true
+    shell_command_before: title_term '' xxxxxxxxxx
+    shell_command: echo main
+

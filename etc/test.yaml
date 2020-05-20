@@ -1,0 +1,10 @@
+wow: 123
+bastion:
+    ip: 1.2.3.9
+    user: vpntech
+    port: 22
+hosts: 
+    - name: abc
+      ip: 1.2.3.4
+    - name: def
+      ip: 2.3.2.2
